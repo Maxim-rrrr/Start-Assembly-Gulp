@@ -21,8 +21,8 @@ let path = {
   },
   watch: {
     html: source_folder + '/**/**.html',
-    css: source_folder + '/sass/style.sass',
-    js: source_folder + '/**/*.js',
+    css: source_folder + '/**/**.sass',
+    js: source_folder + '/**/**/*.js',
     img: source_folder + '/img/**/**',
   },
   clean: './' + project_folder + '/'
@@ -66,7 +66,7 @@ function browserSync(params) {
 function html() {
   return src(path.src.html)
     .pipe(fileinclude())
-    .pipe(webpHTML())
+    // .pipe(webpHTML())
     .pipe(dest(path.build.html))
     .pipe(browsersync.stream())
 }
@@ -98,11 +98,13 @@ function css() {
 }
 
 // Сборка JS
-function js(done) {
-  src(path.src.blocks + '**/**/*.js')
+function jsBlocks () {
+  return src(path.src.blocks + '/**/*.js')
     .pipe(concat('blocks.js')) // в какой файл объединить
     .pipe(gulp.dest('./' + source_folder + '/js/vendor/'))
+}
 
+function jsMain(done) {
   src(path.src.js)
     .pipe(fileinclude())
     .pipe(minify({
@@ -114,16 +116,17 @@ function js(done) {
     .pipe(dest('./dist/js/'))
     .pipe(browsersync.stream());
 
-
   done();
 }
+
+let js = gulp.series(jsBlocks, jsMain)
 
 // Сборка картинок
 function images() {
   return src(path.src.img)
     .pipe(
       webp({
-        quality: 70
+        quality: 100
       })
     )
     .pipe(dest(path.build.img))
@@ -156,7 +159,7 @@ gulp.task('svgSprite', function () {
 function watchFiles(params) {
   gulp.watch([path.watch.html], html)
   gulp.watch([path.watch.css], css)
-  gulp.watch([path.watch.js], js)
+  gulp.watch([path.watch.js, '!./' + source_folder + '/js/vendor/blocks.js'], js)
   gulp.watch([path.watch.img], images)
 }
 
